@@ -1,51 +1,70 @@
 #include <iostream>
-#include <math.h>
+#include <cmath>
+#include <vector>
 class Point
 {
 private:
-    int x = 0;
-    int y = 0;
+    double x_ = 0;
+    double y_ = 0;
 public:
-    Point(int a, int b){
-    x = a;
-    y = b;
+    Point(double a = 0, double b = 0)
+    : x_(a),
+    y_(b)
+    {}
+    Point(const Point &other)
+    : x_(other.x_),
+    y_(other.y_)
+    {}
+    Point& operator= (const Point &other)
+    {
+        x_ = other.x_;
+        y_ = other.y_;
+        return *this;
     }
-    void copy(Point other){
-        x = other.x;
-        y = other.y;
+    double distanse(Point &other) const
+    {
+        return sqrt((x_ - other.x_)*(x_ - other.x_) + (y_ - other.y_)*(y_ - other.y_));
     }
-    void assignment(Point other){
-        *this = other;
+    bool operator== (const Point& other) const
+    {
+        return (-0.000000001<= (x_ - other.x_) <= 0.000000001
+                && -0.000000001 <= (y_ - other.y_) <= 0.000000001);
     }
-    float distanse(Point other){
-        return sqrt((x - other.x)*(x - other.x) + (y - other.y)*(y - other.y));
-    };
 };
 class BrokenLine
 {
 private:
-    Point* listOfPoints;
-    int numOfPoints = 0;
+    std::vector<Point*> listOfPoints_;
+    int numOfPoints_ = 0;
 public:
-    BrokenLine(Point* list, int num){
-        listOfPoints = list;
-        numOfPoints = num;
-    }
-    void copy(BrokenLine other){
-        listOfPoints = other.listOfPoints;
-        numOfPoints = other.numOfPoints;
-    }
-    void assignment(BrokenLine other){
-        *this = other;
-    }
-    float perimetr() const{
-        float x = 0;
-        for (int i = 1; i < this->numOfPoints; i++){
-            x += this->listOfPoints[i - 1].distanse(this->listOfPoints[i]);
+    BrokenLine(std::vector<Point*>*l = nullptr)
+    {
+        if (l == nullptr){
+            listOfPoints_.resize(0);
+            numOfPoints_ = 0;
+        } else {
+            numOfPoints_ = l->size();
+            for (int i = 0; i < numOfPoints_; i++){
+                listOfPoints_[i] = (*l)[i];
+            }
         }
-        return x;
-    };
+    }
+    BrokenLine(const BrokenLine &other)
+    {
+        numOfPoints_ = other.listOfPoints_.size();
+        for (int i = 0; i < numOfPoints_; i++) {
+            listOfPoints_[i] = other.listOfPoints_[i];
+        }
+    }
+    BrokenLine& operator= (const BrokenLine &other)
+    {
+        numOfPoints_ = other.listOfPoints_.size();
+        for (int i = 0; i < numOfPoints_; i++) {
+            listOfPoints_[i] = other.listOfPoints_[i];
+        }
+        return *this;
+    }
 };
-int main() {
 
+int main() {
 }
