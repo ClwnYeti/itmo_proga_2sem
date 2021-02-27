@@ -1,0 +1,16 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+C:/Users/crazy/CLionProjects/itmo_proga_2sem/2sem1lab/main.cpp
+iostream
+-
+cmath
+-
+vector
+-
+
