@@ -1,6 +1,38 @@
 #include <iostream>
 #include <cmath>
 #include <vector>
+class Point
+{
+protected:
+    double x_ = 0;
+    double y_ = 0;
+public:
+    explicit Point(double a = 0, double b = 0)
+            : x_(a),
+              y_(b)
+    {}
+    Point(const Point &other) = default;
+    Point& operator= (const Point &other) = default;
+    double distance(Point &other) const
+    {
+        return sqrt((x_ - other.x_)*(x_ - other.x_) + (y_ - other.y_)*(y_ - other.y_));
+    }
+    bool operator== (const Point& other) const
+    {
+        return (-0.000000001<= (x_ - other.x_) && (x_ - other.x_) <= 0.000000001
+                && -0.000000001 <= (y_ - other.y_) && (y_ - other.y_) <= 0.000000001);
+    }
+    bool operator!= (const Point& other) const
+    {
+        return !(*this == other);
+    }
+    double x() const{
+        return x_;
+    };
+    double y() const{
+        return y_;
+    };
+};
 class VectorP
 {
 protected:
@@ -8,9 +40,15 @@ protected:
     double y_;
     double length_;
 public:
-    VectorP(double a = 0, double b = 0)
-    : x_(a),
-    y_(b)
+    explicit VectorP(double a = 0, double b = 0)
+            : x_(a),
+              y_(b)
+    {
+        length_ = sqrt(x_ * x_ + y_ * y_);
+    }
+    VectorP(Point a, Point b)
+            : x_(b.x() - a.x()),
+              y_(b.y() - a.y())
     {
         length_ = sqrt(x_ * x_ + y_ * y_);
     }
@@ -27,110 +65,54 @@ public:
         return length_;
     }
 };
-class Point
-{
-protected:
-    double x_ = 0;
-    double y_ = 0;
-public:
-    Point(double a = 0, double b = 0)
-            : x_(a),
-              y_(b)
-    {}
-    Point(const Point &other)
-            : x_(other.x_),
-              y_(other.y_)
-    {}
-    Point& operator= (const Point &other)
-    {
-        x_ = other.x_;
-        y_ = other.y_;
-        return *this;
-    }
-    double distance(Point &other) const
-    {
-        return sqrt((x_ - other.x_)*(x_ - other.x_) + (y_ - other.y_)*(y_ - other.y_));
-    }
-    bool operator== (const Point& other) const
-    {
-        return (-0.000000001<= (x_ - other.x_) && (x_ - other.x_) <= 0.000000001
-                && -0.000000001 <= (y_ - other.y_) && (y_ - other.y_) <= 0.000000001);
-    }
-    bool operator!= (const Point& other) const
-    {
-        return !(*this == other);
-    }
-    void point(){
-        std::cout << "[" << x_ << "; " << y_ << "]\n";
-    }
-    double x(){
-        return x_;
-    };
-    double y(){
-        return y_;
-    };
-};
 class BrokenLine
 {
 protected:
-    std::vector<Point*> listOfPoints_;
-    int numOfPoints_ = 0;
+    std::vector<Point> listOfPoints_;
     double perimeter_ = 0;
     virtual void check(int l)
     {
         if (l < 2){
-            throw std::invalid_argument("Can't create a broken line like this");
+            throw std::invalid_argument("Not enough points to create");
         }
     }
     virtual void findPerimeter()
     {
-        for (int i = 1; i < numOfPoints_; i++){
-            perimeter_ += listOfPoints_[i]->distance(*listOfPoints_[i - 1]);
+        for (int i = 1; i < listOfPoints_.size(); i++){
+            perimeter_ += listOfPoints_[i].distance(listOfPoints_[i - 1]);
+        }
+    }
+    void push_into(std::vector<Point>& l)
+    {
+        int k = 0;
+        for (int i = 0; i < l.size(); i++) {
+            if (i == 0 || listOfPoints_[i - 1 - k] != l[i]) {
+                listOfPoints_.resize(listOfPoints_.size() + 1);
+                listOfPoints_[i - k] = l[i];
+            } else {
+                k++;
+            }
         }
     }
 public:
-    BrokenLine(std::vector<Point*>* l = nullptr)
-    {
-        if (l == nullptr){
-            listOfPoints_.resize(0);
-            numOfPoints_ = 0;
-        } else {
-            int k = 0;
-            numOfPoints_ = l->size();
-            for (int i = 0; i < numOfPoints_; i++){
-                if (i == 0 || *listOfPoints_[i - 1 - k] != *(*l)[i]) {
-                    listOfPoints_.resize(listOfPoints_.size() + 1);
-                    listOfPoints_[i - k] = (*l)[i];
-                }
-                else {
-                    k++;
-                }
-            }
-            numOfPoints_ -= k;
-            check(numOfPoints_);
-            findPerimeter();
-        }
+    BrokenLine() = default;
+    explicit BrokenLine(std::vector<Point>& l) {
+        push_into(l);
+        check(listOfPoints_.size());
+        findPerimeter();
     }
-    BrokenLine(const BrokenLine &other)
-    {
-        numOfPoints_ = other.listOfPoints_.size();
-        for (int i = 0; i < numOfPoints_; i++) {
-            listOfPoints_[i] = other.listOfPoints_[i];
-        }
-    }
-    BrokenLine& operator= (const BrokenLine &other)
-    {
-        listOfPoints_.clear();
-        numOfPoints_ = other.listOfPoints_.size();
-        listOfPoints_.resize(numOfPoints_);
-        for (int i = 0; i < numOfPoints_; i++) {
-            listOfPoints_[i] = other.listOfPoints_[i];
-        }
-        return *this;
-    }
+    BrokenLine(const BrokenLine &other) = default;
+    BrokenLine& operator= (const BrokenLine &other) = default;
     double perimeter() const
     {
         return perimeter_;
+    }
+    int size()
+    {
+        return listOfPoints_.size();
+    }
+    std::vector<Point>& get_list(){
+        return listOfPoints_;
     }
 };
 
@@ -140,154 +122,87 @@ protected:
     void check(int l) override
     {
         if (l < 3){
-            throw std::invalid_argument("Can't create a connected broken line like this");
+            throw std::invalid_argument("Not enough points to create");
         }
     }
     void findPerimeter() override
     {
-        for (int i = 1; i < numOfPoints_; i++){
-            perimeter_ += listOfPoints_[i]->distance(*listOfPoints_[i - 1]);
+        for (int i = 1; i < listOfPoints_.size(); i++){
+            perimeter_ += listOfPoints_[i].distance(listOfPoints_[i - 1]);
         }
-        perimeter_ += listOfPoints_[0]->distance(*listOfPoints_[numOfPoints_ - 1]);
+        perimeter_ += listOfPoints_[0].distance(listOfPoints_[listOfPoints_.size() - 1]);
     }
 public:
-    ConnectedBrokenLine(std::vector<Point*>* l = nullptr) {
-        if (l == nullptr) {
-            listOfPoints_.resize(0);
-            numOfPoints_ = 0;
-        } else {
-            int k = 0;
-            numOfPoints_ = l->size();
-            for (int i = 0; i < numOfPoints_; i++){
-                if (i == 0 || *listOfPoints_[i - 1 - k] != *(*l)[i]) {
-                    listOfPoints_.resize(listOfPoints_.size() + 1);
-                    listOfPoints_[i - k] = (*l)[i];
-                }
-                else {
-                    k++;
-                }
-            }
-            numOfPoints_ -= k;
-            if (*listOfPoints_[0] == *listOfPoints_[numOfPoints_ - 1]){
-                listOfPoints_.pop_back();
-                numOfPoints_ --;
-            }
-            check(numOfPoints_);
-            findPerimeter();
-        }
-    }
-    ConnectedBrokenLine(const ConnectedBrokenLine &other)
+    ConnectedBrokenLine() = default;
+    explicit ConnectedBrokenLine(std::vector<Point>& l)
     {
-        numOfPoints_ = other.listOfPoints_.size();
-        for (int i = 0; i < numOfPoints_; i++) {
-            listOfPoints_[i] = other.listOfPoints_[i];
+        push_into(l);
+        if (listOfPoints_[0] == listOfPoints_[listOfPoints_.size() - 1]){
+            listOfPoints_.pop_back();
         }
+        check(listOfPoints_.size());
+        findPerimeter();
     }
+    ConnectedBrokenLine(const ConnectedBrokenLine &other) = default;
 };
+
 class Polygon
 {
 protected:
-    std::vector<Point*> listOfPoints_;
+    ConnectedBrokenLine line;
     std::vector<VectorP> listOfEdges_;
-    int numOfPoints_ = 0;
-    double perimeter_ = 0;
     double area_ = 0;
+    Polygon() = default;
     virtual void check()
     {
-        if (numOfPoints_ < 3){
-            throw std::invalid_argument("Can't create a polygon like this");
-        }
-        listOfEdges_.resize(numOfPoints_);
-        for (int i = 0; i < numOfPoints_; i++){
-            listOfEdges_[i] = VectorP(listOfPoints_[(i + numOfPoints_) % numOfPoints_]->x()
-                                      - listOfPoints_[(i + 1 + numOfPoints_) % numOfPoints_]->x(),
-                                      listOfPoints_[(i + numOfPoints_) % numOfPoints_]->y()
-                                      - listOfPoints_[(i + 1 + numOfPoints_) % numOfPoints_]->y());
-        }
-        for (int i = 1; i < numOfPoints_ - 1; i++){
+        checkPolygon();
+    }
+    void checkPolygon()
+    {
+        for (int i = 1; i < line.size() - 1; i++){
             if ((listOfEdges_[i - 1].scalar(listOfEdges_[i]) > 0
-                && listOfEdges_[i].scalar(listOfEdges_[i + 1]) < 0)
+                 && listOfEdges_[i].scalar(listOfEdges_[i + 1]) < 0)
                 || (listOfEdges_[i - 1].scalar(listOfEdges_[i]) < 0
-                && listOfEdges_[i].scalar(listOfEdges_[i + 1]) > 0))
+                    && listOfEdges_[i].scalar(listOfEdges_[i + 1]) > 0))
             {
-                throw std::invalid_argument("Can't create a polygon like this");
+                throw std::invalid_argument("Your polygon is non-convex");
             }
-
         }
     }
-    void findPerimeter()
+    void create_list_of_edges()
     {
-        for (int i = 1; i < numOfPoints_; i++){
-            perimeter_ += listOfPoints_[i]->distance(*listOfPoints_[i - 1]);
+        listOfEdges_.resize(line.size());
+        for (int i = 0; i < line.size(); i++){
+            listOfEdges_[i] = VectorP(line.get_list()[(i + line.size()) % line.size()],
+                                                    line.get_list()[(i + 1 + line.size()) % line.size()]);
         }
-        perimeter_ += listOfPoints_[0]->distance(*listOfPoints_[numOfPoints_ - 1]);
     }
     void findArea()
     {
-        for (int i = 0; i < numOfPoints_ - 1; i++){
-            area_ += listOfPoints_[i]->x() * listOfPoints_[i + 1]->y()
-                    - listOfPoints_[i + 1]->x() * listOfPoints_[i]->y();
+        for (int i = 0; i < line.size() - 1; i++){
+            area_ += line.get_list()[i].x() * line.get_list()[i + 1].y()
+                    - line.get_list()[i + 1].x() * line.get_list()[i].y();
         }
-        area_ += listOfPoints_[numOfPoints_ - 1]->x()*listOfPoints_[0]->y()
-                - listOfPoints_[0]->x()*listOfPoints_[numOfPoints_ - 1]->y();
+        area_ += line.get_list()[line.size() - 1].x() * line.get_list()[0].y()
+                - line.get_list()[0].x() * line.get_list()[line.size() - 1].y();
         area_ /= 2;
         if (area_ < 0){
             area_ *= -1;
         }
     }
 public:
-    Polygon(std::vector<Point*>* l = nullptr)
+
+    explicit Polygon(std::vector<Point>& l)
     {
-        if (l == nullptr) {
-            listOfPoints_.resize(0);
-            numOfPoints_ = 0;
-        } else {
-            int k = 0;
-            numOfPoints_ = l->size();
-            for (int i = 0; i < numOfPoints_; i++){
-                if (i == 0 || *listOfPoints_[i - 1 - k] != *(*l)[i]) {
-                    listOfPoints_.resize(listOfPoints_.size() + 1);
-                    listOfPoints_[i - k] = (*l)[i];
-                }
-                else {
-                    k++;
-                }
-            }
-            numOfPoints_ -= k;
-            if (*listOfPoints_[0] == *listOfPoints_[numOfPoints_ - 1]){
-                listOfPoints_.pop_back();
-                numOfPoints_ --;
-            }
-            check();
-            findPerimeter();
-            findArea();
-        }
+        line = ConnectedBrokenLine(l);
+        create_list_of_edges();
+        check();
+        findArea();
     }
-    Polygon(const Polygon &other)
-    {
-        numOfPoints_ = other.listOfPoints_.size();
-        listOfPoints_.resize(numOfPoints_);
-        listOfEdges_.resize(numOfPoints_);
-        for (int i = 0; i < numOfPoints_; i++) {
-            listOfPoints_[i] = other.listOfPoints_[i];
-            listOfEdges_[i] = other.listOfEdges_[i];
-        }
-    }
-    Polygon& operator= (const Polygon &other)
-    {
-        listOfPoints_.clear();
-        listOfEdges_.clear();
-        numOfPoints_ = other.listOfPoints_.size();
-        listOfPoints_.resize(numOfPoints_);
-        listOfEdges_.resize(numOfPoints_);
-        for (int i = 0; i < numOfPoints_; i++) {
-            listOfPoints_[i] = other.listOfPoints_[i];
-            listOfEdges_[i] = other.listOfEdges_[i];
-        }
-        return *this;
-    }
+    Polygon(const Polygon &other) = default;
+    Polygon& operator= (const Polygon &other) = default;
     double perimeter() const{
-        return perimeter_;
+        return line.perimeter();
     }
     double area() const{
         return area_;
@@ -296,78 +211,38 @@ public:
 class Triangle: public Polygon
 {
 protected:
+    Triangle() = default;
     void check() override
     {
-        if (numOfPoints_ != 3){
-            throw std::invalid_argument("Can't create a triangle like this");
+        checkPolygon();
+        if (line.size() != 3){
+            throw std::invalid_argument("Too much points for triangle");
         }
-        listOfEdges_.resize(numOfPoints_);
-        for (int i = 0; i < numOfPoints_; i++){
-            listOfEdges_[i] = VectorP(listOfPoints_[(i + numOfPoints_) % numOfPoints_]->x()
-                                      - listOfPoints_[(i + 1 + numOfPoints_) % numOfPoints_]->x(),
-                                      listOfPoints_[(i + numOfPoints_) % numOfPoints_]->y()
-                                      - listOfPoints_[(i + 1 + numOfPoints_) % numOfPoints_]->y());
-        };
         if (listOfEdges_[0].length() >= listOfEdges_[1].length() + listOfEdges_[2].length() - 0.000000001 ||
             listOfEdges_[1].length() >= listOfEdges_[0].length() + listOfEdges_[2].length() - 0.000000001 ||
             listOfEdges_[2].length() >= listOfEdges_[1].length() + listOfEdges_[0].length() - 0.000000001)
         {
-            throw std::invalid_argument("Can't create a triangle like this");
+            throw std::invalid_argument("It is a line");
         }
     }
 public:
-    Triangle(std::vector<Point*>* l = nullptr)
+    explicit Triangle(std::vector<Point>& l)
     {
-        if (l == nullptr) {
-            listOfPoints_.resize(0);
-            numOfPoints_ = 0;
-        } else {
-            int k = 0;
-            numOfPoints_ = l->size();
-            for (int i = 0; i < numOfPoints_; i++){
-                if (i == 0 || *listOfPoints_[i - 1 - k] != *(*l)[i]) {
-                    listOfPoints_.resize(listOfPoints_.size() + 1);
-                    listOfPoints_[i - k] = (*l)[i];
-                }
-                else {
-                    k++;
-                }
-            }
-            numOfPoints_ -= k;
-            if (*listOfPoints_[0] == *listOfPoints_[numOfPoints_ - 1]){
-                listOfPoints_.pop_back();
-                numOfPoints_ --;
-            }
-            check();
-            findPerimeter();
-            findArea();
-        }
+        line = ConnectedBrokenLine(l);
+        check();
+        findArea();
     }
-    Triangle(const Triangle &other)
-    {
-        numOfPoints_ = other.listOfPoints_.size();
-        listOfPoints_.resize(numOfPoints_);
-        listOfEdges_.resize(numOfPoints_);
-        for (int i = 0; i < numOfPoints_; i++) {
-            listOfPoints_[i] = other.listOfPoints_[i];
-            listOfEdges_[i] = other.listOfEdges_[i];
-        }
-    }
+    Triangle(const Triangle &other) = default;
 };
 class Trapezoid: public Polygon
 {
 protected:
+    Trapezoid() = default;
     void check() override {
-        if (numOfPoints_ != 4) {
-            throw std::invalid_argument("Can't create a trapezoid like this");
+        checkPolygon();
+        if (line.size() != 4){
+            throw std::invalid_argument("Invalid amount of points for trapezoid");
         }
-        listOfEdges_.resize(numOfPoints_);
-        for (int i = 0; i < numOfPoints_; i++){
-            listOfEdges_[i] = VectorP(listOfPoints_[(i + numOfPoints_) % numOfPoints_]->x()
-                                      - listOfPoints_[(i + 1 + numOfPoints_) % numOfPoints_]->x(),
-                                      listOfPoints_[(i + numOfPoints_) % numOfPoints_]->y()
-                                      - listOfPoints_[(i + 1 + numOfPoints_) % numOfPoints_]->y());
-        };
         if  (!(((listOfEdges_[0].cos(listOfEdges_[2]) < -0.99999
             || listOfEdges_[0].cos(listOfEdges_[2]) > 0.99999)
             && -1 < listOfEdges_[1].cos(listOfEdges_[3])
@@ -377,130 +252,55 @@ protected:
             && -1 < listOfEdges_[0].cos(listOfEdges_[2])
             && listOfEdges_[0].cos(listOfEdges_[2]) < 1)))
         {
-            throw std::invalid_argument("Can't create a trapezoid like this");
+            throw std::invalid_argument("It is not a trapezoid");
         }
     }
 public:
-    Trapezoid(std::vector<Point*>* l = nullptr)
+    explicit Trapezoid(std::vector<Point> &l)
     {
-        if (l == nullptr) {
-            listOfPoints_.resize(0);
-            numOfPoints_ = 0;
-        } else {
-            int k = 0;
-            numOfPoints_ = l->size();
-            for (int i = 0; i < numOfPoints_; i++){
-                if (i == 0 || *listOfPoints_[i - 1 - k] != *(*l)[i]) {
-                    listOfPoints_.resize(listOfPoints_.size() + 1);
-                    listOfPoints_[i - k] = (*l)[i];
-                }
-                else {
-                    k++;
-                }
-            }
-            numOfPoints_ -= k;
-            if (*listOfPoints_[0] == *listOfPoints_[numOfPoints_ - 1]){
-                listOfPoints_.pop_back();
-                numOfPoints_ --;
-            }
-            check();
-            findPerimeter();
-            findArea();
-        }
+        line = ConnectedBrokenLine(l);
+        check();
+        findArea();
     }
-    Trapezoid(const Trapezoid &other)
-    {
-        numOfPoints_ = other.listOfPoints_.size();
-        listOfPoints_.resize(numOfPoints_);
-        listOfEdges_.resize(numOfPoints_);
-        for (int i = 0; i < numOfPoints_; i++) {
-            listOfPoints_[i] = other.listOfPoints_[i];
-            listOfEdges_[i] = other.listOfEdges_[i];
-        }
-    }
+    Trapezoid(const Trapezoid &other) = default;
 };
-class ReguralPolygon: public Polygon
-{
+class RegularPolygon: public Polygon {
 protected:
-    void check() override
-    {
-        if (numOfPoints_ < 3){
-            throw std::invalid_argument("Can't create a regural polygon like this");
-        }
-        listOfEdges_.resize(numOfPoints_);
-        for (int i = 0; i < numOfPoints_; i++){
-            listOfEdges_[i] = VectorP(listOfPoints_[(i + numOfPoints_) % numOfPoints_]->x()
-                                      - listOfPoints_[(i + 1 + numOfPoints_) % numOfPoints_]->x(),
-                                      listOfPoints_[(i + numOfPoints_) % numOfPoints_]->y()
-                                      - listOfPoints_[(i + 1 + numOfPoints_) % numOfPoints_]->y());
-        };
-        for (int i = 1; i < numOfPoints_ - 1; i++){
-            if ((listOfEdges_[i - 1].scalar(listOfEdges_[i]) > 0
-                && listOfEdges_[i].scalar(listOfEdges_[i + 1]) < 0)
-                || (listOfEdges_[i - 1].scalar(listOfEdges_[i]) < 0
-                && listOfEdges_[i].scalar(listOfEdges_[i + 1]) > 0)
-                || listOfEdges_[i - 1].length() <= listOfEdges_[i].length() - 0.000000001
-                || listOfEdges_[i].length() <= listOfEdges_[i + 1].length() - 0.000000001
-                || listOfEdges_[i - 1].length() >= listOfEdges_[i].length() + 0.000000001
-                || listOfEdges_[i].length() >= listOfEdges_[i + 1].length() + 0.000000001)
-            {
-                throw std::invalid_argument("Can't create a regural polygon like this");
+    RegularPolygon() = default;
+    void check() override {
+        checkPolygon();
+        for (int i = 1; i < line.size() - 1; i++) {
+            if (listOfEdges_[i - 1].length() <= listOfEdges_[i].length() - 0.000000001 ||
+                listOfEdges_[i].length() <= listOfEdges_[i + 1].length() - 0.000000001 ||
+                listOfEdges_[i - 1].length() >= listOfEdges_[i].length() + 0.000000001 ||
+                listOfEdges_[i].length() >= listOfEdges_[i + 1].length() + 0.000000001) {
+                throw std::invalid_argument("Can't create a regular polygon like this");
             }
         }
     }
+
 public:
-    ReguralPolygon(std::vector<Point*>* l = nullptr)
-    {
-        if (l == nullptr) {
-            listOfPoints_.resize(0);
-            numOfPoints_ = 0;
-        } else {
-            int k = 0;
-            numOfPoints_ = l->size();
-            for (int i = 0; i < numOfPoints_; i++){
-                if (i == 0 || *listOfPoints_[i - 1 - k] != *(*l)[i]) {
-                    listOfPoints_.resize(listOfPoints_.size() + 1);
-                    listOfPoints_[i - k] = (*l)[i];
-                }
-                else {
-                    k++;
-                }
-            }
-            numOfPoints_ -= k;
-            if (*listOfPoints_[0] == *listOfPoints_[numOfPoints_ - 1]){
-                listOfPoints_.pop_back();
-                numOfPoints_--;
-            }
-            check();
-            findPerimeter();
-            findArea();
-        }
+    explicit RegularPolygon(std::vector<Point> &l) {
+        line = ConnectedBrokenLine(l);
+        check();
+        findArea();
     }
-    ReguralPolygon(const ReguralPolygon &other)
-    {
-        numOfPoints_ = other.listOfPoints_.size();
-        listOfPoints_.resize(numOfPoints_);
-        listOfEdges_.resize(numOfPoints_);
-        for (int i = 0; i < numOfPoints_; i++) {
-            listOfPoints_[i] = other.listOfPoints_[i];
-            listOfEdges_[i] = other.listOfEdges_[i];
-        }
-    }
+    RegularPolygon(const RegularPolygon &other) = default;
 };
 int main() {
-    std::vector<Point *> l;
+    std::vector<Point> l;
     Point a1(0, 0);
     Point a2(0, 5);
     Point a3(5, 5);
     Point a4(5, 0);
     Point a5(4, 0);
-    l.push_back(&a1);
-    l.push_back(&a2);
-    l.push_back(&a3);
-    Polygon p(&l);
-    Triangle t(&l);
-    l.push_back(&a4);
-    ReguralPolygon rp(&l);
+    l.push_back(a1);
+    l.push_back(a2);
+    l.push_back(a3);
+    Polygon p(l);
+    Triangle t(l);
+    l.push_back(a4);
+    RegularPolygon rp(l);
     std::cout << "\n" << p.perimeter();
     std::cout << "\n" << p.area();
     std::cout << "\n" << t.perimeter();
@@ -508,8 +308,8 @@ int main() {
     std::cout << "\n" << rp.perimeter();
     std::cout << "\n" << rp.area();
     l.pop_back();
-    l.push_back(&a5);
-    Trapezoid tr(&l);
+    l.push_back(a5);
+    Trapezoid tr(l);
     std::cout << "\n" << tr.perimeter();
     std::cout << "\n" << tr.area();
 }
