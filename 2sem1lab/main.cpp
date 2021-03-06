@@ -38,23 +38,28 @@ class VectorP
 protected:
     double x_;
     double y_;
+    double b_;
+    double a_;
+    double c_;
     double length_;
 public:
-    explicit VectorP(double a = 0, double b = 0)
-            : x_(a),
-              y_(b)
-    {
-        length_ = sqrt(x_ * x_ + y_ * y_);
-    }
-    VectorP(Point a, Point b)
+    VectorP() = default;
+    VectorP(Point &a, Point &b)
             : x_(b.x() - a.x()),
               y_(b.y() - a.y())
     {
         length_ = sqrt(x_ * x_ + y_ * y_);
+        b_ = a.x() - b.x();
+        a_ = b.y() - a.y();
+        c_ = -(a_ * a.x() + b_ * a.y());
     }
     double scalar(VectorP &other) const
     {
         return x_ * other.x_ + y_ * other.y_;
+    }
+    double pointCoordination(Point& a)
+    {
+        return a_*a.x() + b_*a.y() + c_;
     }
     double cos(VectorP &other) const
     {
@@ -68,6 +73,7 @@ public:
 class BrokenLine
 {
 protected:
+    BrokenLine() = default;
     std::vector<Point> listOfPoints_;
     double perimeter_ = 0;
     virtual void check(int l)
@@ -95,7 +101,6 @@ protected:
         }
     }
 public:
-    BrokenLine() = default;
     explicit BrokenLine(std::vector<Point>& l) {
         push_into(l);
         check(listOfPoints_.size());
@@ -160,10 +165,10 @@ protected:
     void checkPolygon()
     {
         for (int i = 1; i < line.size() - 1; i++){
-            if ((listOfEdges_[i - 1].scalar(listOfEdges_[i]) > 0
-                 && listOfEdges_[i].scalar(listOfEdges_[i + 1]) < 0)
-                || (listOfEdges_[i - 1].scalar(listOfEdges_[i]) < 0
-                    && listOfEdges_[i].scalar(listOfEdges_[i + 1]) > 0))
+            if ((listOfEdges_[i - 1].pointCoordination(line.get_list()[i + 1]) <= 0 &&
+                listOfEdges_[i - 1].pointCoordination(line.get_list()[i + 2]) > 0) ||
+                (listOfEdges_[i - 1].pointCoordination(line.get_list()[i + 1]) >= 0 &&
+                listOfEdges_[i - 1].pointCoordination(line.get_list()[i + 2]) < 0))
             {
                 throw std::invalid_argument("Your polygon is non-convex");
             }
@@ -174,10 +179,10 @@ protected:
         listOfEdges_.resize(line.size());
         for (int i = 0; i < line.size(); i++){
             listOfEdges_[i] = VectorP(line.get_list()[(i + line.size()) % line.size()],
-                                                    line.get_list()[(i + 1 + line.size()) % line.size()]);
+                                      line.get_list()[(i + 1 + line.size()) % line.size()]);
         }
     }
-    void findArea()
+    virtual void findArea()
     {
         for (int i = 0; i < line.size() - 1; i++){
             area_ += line.get_list()[i].x() * line.get_list()[i + 1].y()
@@ -191,7 +196,6 @@ protected:
         }
     }
 public:
-
     explicit Polygon(std::vector<Point>& l)
     {
         line = ConnectedBrokenLine(l);
@@ -229,6 +233,7 @@ public:
     explicit Triangle(std::vector<Point>& l)
     {
         line = ConnectedBrokenLine(l);
+        create_list_of_edges();
         check();
         findArea();
     }
@@ -259,6 +264,7 @@ public:
     explicit Trapezoid(std::vector<Point> &l)
     {
         line = ConnectedBrokenLine(l);
+        create_list_of_edges();
         check();
         findArea();
     }
@@ -267,6 +273,7 @@ public:
 class RegularPolygon: public Polygon {
 protected:
     RegularPolygon() = default;
+    double len = 0;
     void check() override {
         checkPolygon();
         for (int i = 1; i < line.size() - 1; i++) {
@@ -278,11 +285,17 @@ protected:
             }
         }
     }
+    void findArea() override
+    {
+        area_ = (line.size() * len * len) / (4 * std::tan(M_PI/ line.size()));
+    }
 
 public:
     explicit RegularPolygon(std::vector<Point> &l) {
         line = ConnectedBrokenLine(l);
+        create_list_of_edges();
         check();
+        len = listOfEdges_[0].length();
         findArea();
     }
     RegularPolygon(const RegularPolygon &other) = default;
