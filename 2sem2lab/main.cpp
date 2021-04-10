@@ -26,20 +26,18 @@ public:
     {
         return allMembers_[i];
     }
-    Polynomial operator+ (const Polynomial& other) const
-    {
-        Polynomial new_ = *this;
-        for (auto& i : other.allMembers_){
-            new_[i.first] += i.second;
-        }
-        return new_;
-    }
     Polynomial& operator+= (const Polynomial& other)
     {
         for (auto& i : other.allMembers_){
             allMembers_[i.first] += i.second;
         }
         return *this;
+    }
+    Polynomial operator+ (const Polynomial& other) const
+    {
+        Polynomial new_ = *this;
+        new_ += other;
+        return new_;
     }
     Polynomial operator- () const
     {
@@ -57,20 +55,18 @@ public:
     {
         return *this + (-other);
     }
-    Polynomial operator/ (int a) const
-    {
-        Polynomial new_ = *this;
-        for (auto& i : new_.allMembers_){
-            i.second /= a;
-        }
-        return new_;
-    }
     Polynomial& operator/= (int a)
     {
         for (auto& i : allMembers_){
             i.second /= a;
         }
         return *this;
+    }
+    Polynomial operator/ (int a) const
+    {
+        Polynomial new_ = *this;
+        new_/= a;
+        return new_;
     }
     Polynomial& operator*= (int a)
     {
@@ -82,9 +78,7 @@ public:
     Polynomial operator* (int a) const
     {
         Polynomial new_ = *this;
-        for (auto& i : new_.allMembers_){
-            i.second *= a;
-        }
+        new_ *= a;
         return new_;
     }
     Polynomial operator* (const Polynomial& a) const

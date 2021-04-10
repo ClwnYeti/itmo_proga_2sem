@@ -1,0 +1,40 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+C:/Users/crazy/CLionProjects/itmo_proga_2sem/2sem3lab/main.cpp
+iostream
+-
+pugixml.h
+C:/Users/crazy/CLionProjects/itmo_proga_2sem/2sem3lab/pugixml.h
+unordered_map
+-
+string
+-
+vector
+-
+cmath
+-
+Windows.h
+-
+
+C:/Users/crazy/CLionProjects/itmo_proga_2sem/2sem3lab/pugiconfig.h
+
+C:/Users/crazy/CLionProjects/itmo_proga_2sem/2sem3lab/pugixml.h
+pugiconfig.h
+C:/Users/crazy/CLionProjects/itmo_proga_2sem/2sem3lab/pugiconfig.h
+stddef.h
+-
+exception
+-
+iterator
+-
+iosfwd
+-
+string
+-
+
