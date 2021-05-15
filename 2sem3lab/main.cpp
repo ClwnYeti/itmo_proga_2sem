@@ -68,7 +68,7 @@ int main() {
     {
         stt = split(i.child_value("coordinates"), ",", 1);
         char * ptr;
-        Vertex t(std::strtod(stt[0].c_str(), &ptr)*1000, std::strtod(stt[1].c_str(), &ptr)*1000);
+        Vertex t(std::strtod(stt[0].c_str(), &ptr), std::strtod(stt[1].c_str(), &ptr));
         stt = split(i.child_value("routes"), ",.", 1);
         r = i.child_value("type_of_vehicle");
         for(auto & j : stt)
@@ -142,7 +142,7 @@ int main() {
     for (const auto& i: routesEnd) {
         std::cout << i.first << "\n";
         std::cout << rout[i.first].first << " -> " << rout[i.first].second << "\n";
-        std::cout << coord[i.first].first << " -> " << coord[i.first].second / 1000 << "\n";
+        std::cout << coord[i.first].first << "\n";
     }
     return 0;
 }

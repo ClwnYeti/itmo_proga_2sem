@@ -5,7 +5,7 @@ template <class Iterator, class UnaryPredicate>
 
 bool all_of(Iterator begin, Iterator end, UnaryPredicate f)
 {
-    for (Iterator i = begin; i != end; std::next(i))
+    for (Iterator i = begin; i != end; ++i)
     {
         if (!f(*i)){
             return false;
@@ -14,34 +14,34 @@ bool all_of(Iterator begin, Iterator end, UnaryPredicate f)
     return true;
 }
 template <class Iterator, class UnaryPredicate>
-bool any_of(Iterator& begin, Iterator& end, UnaryPredicate f)
+bool any_of(Iterator begin, Iterator end, UnaryPredicate f)
 {
-    for (Iterator i = begin; i != end; std::next(i))
+    for (Iterator i = begin; i != end; ++i)
     {
-        if (f(i)){
+        if (f(*i)){
             return true;
         }
     }
     return false;
 }
 template <class Iterator, class UnaryPredicate>
-bool none_of(Iterator& begin, Iterator& end, UnaryPredicate f)
+bool none_of(Iterator begin, Iterator end, UnaryPredicate f)
 {
-    for (Iterator i = begin; i != end; std::next(i))
+    for (Iterator i = begin; i != end; ++i)
     {
-        if (f(i)){
+        if (f(*i)){
             return false;
         }
     }
     return true;
 }
 template <class Iterator, class UnaryPredicate>
-bool one_of(Iterator& begin, Iterator& end, UnaryPredicate f)
+bool one_of(Iterator begin, Iterator end, UnaryPredicate f)
 {
     int k = 0;
-    for (Iterator i = begin; i != end; std::next(i))
+    for (Iterator i = begin; i != end; ++i)
     {
-        if (f(i))
+        if (f(*i))
         {
             k++;
             if (k > 1){
@@ -49,37 +49,42 @@ bool one_of(Iterator& begin, Iterator& end, UnaryPredicate f)
             }
         }
     }
-    return true;
+    return k == 1;
 }
 template <class Iterator, class Compare>
-bool is_sorted(Iterator& begin, Iterator& end, Compare comp)
+bool is_sorted(Iterator begin, Iterator end, Compare comp)
 {
-    if (begin == end--)
+    if (begin == end)
     {
         return true;
     }
-    for (Iterator i = begin; i != end;)
+    end--;
+    for (Iterator i = begin; i != end; ++i)
     {
-        if (!comp(i, std::next(i))){
+        if (!comp(*i, *std::next(i))){
             return false;
         }
     }
     return true;
 }
 template <class Iterator, class UnaryPredicate>
-bool is_partitioned(Iterator& begin, Iterator& end, UnaryPredicate f)
+bool is_partitioned(Iterator begin, Iterator end, UnaryPredicate f)
 {
-    bool start = f(begin);
-    bool flag = false;
-    for (Iterator i = begin; i != end; std::next(i))
+    if (begin == end)
     {
-        if (start != f(i)){
+        return false;
+    }
+    bool start = f(*begin);
+    bool flag = false;
+    for (Iterator i = begin; i != end; ++i)
+    {
+        if (start != f(*i)){
             if (flag)
             {
                 return false;
             }
             flag = true;
-            start = f(i);
+            start = f(*i);
         }
     }
     if (flag)
@@ -89,35 +94,50 @@ bool is_partitioned(Iterator& begin, Iterator& end, UnaryPredicate f)
     return false;
 }
 template <class Iterator, class UnaryPredicate>
-Iterator& find_not(Iterator& begin, Iterator& end, UnaryPredicate f)
+Iterator find_not(Iterator begin, Iterator end, UnaryPredicate f)
 {
-    for (Iterator i = begin; i != end; std::next(i)) {
-        if (!f(i)) {
+    for (Iterator i = begin; i != end; ++i) {
+        if (!f(*i)) {
             return i;
         }
     }
+    return end;
 }
 
 template <class Iterator, class UnaryPredicate>
-Iterator& find_backward(Iterator& begin, Iterator& end, UnaryPredicate f)
+Iterator find_backward(Iterator begin, Iterator end, UnaryPredicate f)
 {
-    end--;
-    begin--;
-    for (Iterator i = end; i != begin; std::prev(i)) {
-        if (f(i)) {
+    if (begin == end)
+    {
+        return end;
+    }
+    --end;
+    for (Iterator i = end; i != begin; --i) {
+        if (f(*i)) {
             return i;
         }
     }
+    if (f(*begin))
+    {
+        return begin;
+    }
+    ++end;
+    return end;
 }
 template <class Iterator, class UnaryPredicate>
-bool is_palindrome(Iterator& begin, Iterator& end, UnaryPredicate f)
+bool is_palindrome(Iterator begin, Iterator end, UnaryPredicate f)
 {
+    if (begin == end)
+    {
+        return true;
+    }
     Iterator t = end;
-    for (Iterator i = begin; i != end; std::next(i)) {
-        if (f(i) != f(t)) {
+    --t;
+    for (Iterator i = begin; i != end; ++i) {
+        if (f(*i) != f(*t)) {
             return false;
         }
-        std::prev(t);
+        --t;
     }
     return true;
 }
