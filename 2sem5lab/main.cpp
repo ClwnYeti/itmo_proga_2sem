@@ -143,13 +143,13 @@ public:
                 return data_[k];
         throw std::invalid_argument("Out of range");
     }
-    Value_T& first()
+    Value_T* first()
     {
-        return operator[](firstEl_);
+        return &operator[](firstEl_);
     }
-    Value_T& last()
+    Value_T* end()
     {
-        return operator[](endEl_);
+        return &operator[](endEl_);
     }
     void changeCapacity(int k)
     {
