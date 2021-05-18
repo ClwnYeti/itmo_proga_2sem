@@ -5,11 +5,11 @@ template <class Value_T>
 class CircleBuffer
 {
 private:
-    int capasity_ = 0;
+    int capacity_ = 0;
     Value_T* data_;
     Value_T* dataEnd_;
-    Value_T* startEl_;
-    Value_T* endEl_;
+    int firstEl_;
+    int endEl_;
 public:
     class CircleIterator: public std::iterator<std::random_access_iterator_tag, Value_T>
     {
@@ -29,11 +29,11 @@ public:
         }
         CircleIterator& operator+= (int ind)
         {
-            index_ = ((index_ + ind) % capasity_  + capasity_) % capasity_;
+            index_ = ((index_ + ind) % capacity_ + capacity_) % capacity_;
         }
         CircleIterator& operator-= (int ind)
         {
-            index_ = ((index_ - ind) % capasity_ + capasity_) % capasity_;
+            index_ = ((index_ - ind) % capacity_ + capacity_) % capacity_;
         }
         CircleIterator& operator+ (int ind) const
         {
@@ -43,7 +43,7 @@ public:
         }
         int operator- (const CircleIterator& other) const
         {
-            return (index_ - other.index_ + capasity_) % capasity_;
+            return (index_ - other.index_ + capacity_) % capacity_;
         }
         CircleIterator& operator++ ()
         {
@@ -75,7 +75,7 @@ public:
         }
         Value_T& operator[] (int ind)
         {
-            return *(data_ + ((index_ + ind) % capasity_  + capasity_) % capasity_);
+            return *(data_ + ((index_ + ind) % capacity_ + capacity_) % capacity_);
         }
         Value_T& operator* ()
         {
@@ -85,21 +85,102 @@ public:
     };
     CircleBuffer() = default;
     CircleBuffer(int s)
-    : capasity_(s)
+    : capacity_(s + 1)
     {
-        data_ = new Value_T(s);
-        dataEnd_ = data_ + capasity_;
-        startEl_ = data_[0];
-        endEl_ = data_[0];
+        data_ = new Value_T(s + 1);
+        dataEnd_ = data_ + capacity_;
+        firstEl_ = 0;
+        endEl_ = 0;
     }
     bool isFull()
     {
-        return ((int )(startEl_ - endEl_) + capasity_) % capasity_ == 1;
+        return ((firstEl_ - endEl_) + capacity_) % capacity_ == 1;
     }
     bool isEmpty()
     {
-        return ((int )(endEl_ - startEl_) + capasity_) % capasity_ == 0;
+        return ((endEl_ - firstEl_) + capacity_) % capacity_ == 0;
+    }
+    bool push_back(Value_T& i)
+    {
+        if (isFull())
+            return false;
+        data_[endEl_] = i;
+        endEl_ = (endEl_ + 1 + capacity_) % capacity_;
+        return true;
+    }
+    bool push_front(Value_T& i)
+    {
+        if (isFull())
+            return false;
+        if (isEmpty())
+        {
+            data_[firstEl_] = i;
+            endEl_ = (endEl_ + 1 + capacity_) % capacity_;
+        } else
+        {
+            firstEl_ = (firstEl_ - 1 + capacity_) % capacity_;
+            data_[firstEl_] = i;
+        }
+        return true;
+    }
+    bool pop_front()
+    {
+        if (isEmpty())
+            return false;
+        firstEl_++;
+    }
+    bool pop_back()
+    {
+        if (isEmpty())
+            return false;
+        endEl_--;
+    }
+    Value_T& operator[](int index)
+    {
+        int k = (firstEl_ + index % capacity_ + capacity_) % capacity_;
+        if ((endEl_ > firstEl_ && firstEl_ <= k && k < endEl_) ||
+            ((endEl_ < firstEl_) && !(firstEl_ <= k && k < endEl_)))
+                return data_[k];
+        throw std::invalid_argument("Out of range");
+    }
+    Value_T& first()
+    {
+        return operator[](firstEl_);
+    }
+    Value_T& last()
+    {
+        return operator[](endEl_);
+    }
+    void changeCapacity(int k)
+    {
+        delete data_;
+        capacity_ = k + 1;
+        firstEl_ = 0;
+        endEl_ = 0;
+        data_ = new Value_T(capacity_);
+        dataEnd_ = data_ + capacity_;
     }
 };
 int main() {
+    CircleBuffer<int> ex(5);
+    for (int i = 0; i < 2; i++)
+    {
+        ex.push_front(i);
+        ex.push_back(i);
+    }
+    for (int i = 0; i < 5; i++)
+    {
+        std::cout << ex[i] << "\n";
+    }
+    ex.changeCapacity(4);
+    for (int i = 0; i < 2; i++)
+    {
+        ex.push_front(i);
+        ex.push_back(i);
+    }
+    std::cout << "\n";
+    for (int i = 0; i < 4; i++)
+    {
+        std::cout << ex[i] << "\n";
+    }
 }
