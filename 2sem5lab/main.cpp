@@ -1,5 +1,5 @@
 #include <iostream>
-
+#include <algorithm>
 
 template <class Value_T>
 class CircleBuffer
@@ -8,19 +8,22 @@ private:
     int capacity_ = 0;
     Value_T* data_;
     Value_T* dataEnd_;
-    int firstEl_;
-    int endEl_;
+    int firstEl_ = 0;
+    int endEl_ = 0;
 public:
     class CircleIterator: public std::iterator<std::random_access_iterator_tag, Value_T>
     {
     private:
-        unsigned int index_ = 0;
+        Value_T* element_;
     public:
         CircleIterator() = default;
+        explicit CircleIterator(Value_T* el)
+        : element_(el)
+        {}
         CircleIterator& operator= (const CircleIterator& other) = default;
         bool operator== (const CircleIterator& other) const
         {
-            return index_ == other.index_;
+            element_ = other.element_;
         }
 
         bool operator!= (const CircleIterator& other) const
@@ -29,11 +32,29 @@ public:
         }
         CircleIterator& operator+= (int ind)
         {
-            index_ = ((index_ + ind) % capacity_ + capacity_) % capacity_;
+            ind = (ind % capacity_ + capacity_) % capacity_;
+            for (int i = 0; i < ind; i++)
+            {
+                element_++;
+                if (element_ == dataEnd_)
+                {
+                    element_ = data_;
+                }
+            }
+            return *this;
         }
         CircleIterator& operator-= (int ind)
         {
-            index_ = ((index_ - ind) % capacity_ + capacity_) % capacity_;
+            ind = (-ind % capacity_ + capacity_) % capacity_;
+            for (int i = 0; i < ind; i++)
+            {
+                element_++;
+                if (element_ == dataEnd_)
+                {
+                    element_ = data_;
+                }
+            }
+            return this;
         }
         CircleIterator& operator+ (int ind) const
         {
@@ -41,9 +62,23 @@ public:
             other += ind;
             return other;
         }
-        int operator- (const CircleIterator& other) const
+        size_t operator- (const CircleIterator& other) const
         {
-            return (index_ - other.index_ + capacity_) % capacity_;
+            Value_T* k = *data_[firstEl_];
+            int ind1;
+            int ind2;
+            for (int i = firstEl_; i < endEl_; i++)
+            {
+                if (element_ == k)
+                {
+                    ind1 = i;
+                }
+                if (other.element_ == k)
+                {
+                    ind2 = i;
+                }
+            }
+            return (ind1 - ind2) * sizeof(Value_T);
         }
         CircleIterator& operator++ ()
         {
@@ -60,12 +95,12 @@ public:
         CircleIterator& operator++ (int)
         {
             this += 1;
-            return this;
+            return *this;
         }
         CircleIterator& operator-- (int)
         {
             this -= 1;
-            return this;
+            return *this;
         }
         CircleIterator& operator- (int ind) const
         {
@@ -75,22 +110,103 @@ public:
         }
         Value_T& operator[] (int ind)
         {
-            return *(data_ + ((index_ + ind) % capacity_ + capacity_) % capacity_);
+            ind = (ind % capacity_ + capacity_) % capacity_;
+            Value_T* k = element_;
+            for (int i = 0; i < ind; i++)
+            {
+                k++;
+                if (k == dataEnd_)
+                {
+                    k = data_;
+                }
+            }
+            return *k;
         }
         Value_T& operator* ()
         {
             return operator[](0);
         }
-
+        bool operator> (const CircleIterator& other) const
+        {
+            Value_T* k = *data_[firstEl_];
+            int ind1;
+            int ind2;
+            for (int i = firstEl_; i < endEl_; i++)
+            {
+                if (element_ == k)
+                {
+                    ind1 = i;
+                }
+                if (other.element_ == k)
+                {
+                    ind2 = i;
+                }
+            }
+            return ind1 > ind2;
+        }
+        bool operator< (const CircleIterator& other) const
+        {
+            Value_T* k = *data_[firstEl_];
+            int ind1;
+            int ind2;
+            for (int i = firstEl_; i < endEl_; i++)
+            {
+                if (element_ == k)
+                {
+                    ind1 = i;
+                }
+                if (other.element_ == k)
+                {
+                    ind2 = i;
+                }
+            }
+            return ind1 < ind2;
+        }
+        bool operator>= (const CircleIterator& other) const
+        {
+            Value_T* k = *data_[firstEl_];
+            int ind1;
+            int ind2;
+            for (int i = firstEl_; i < endEl_; i++)
+            {
+                if (element_ == k)
+                {
+                    ind1 = i;
+                }
+                if (other.element_ == k)
+                {
+                    ind2 = i;
+                }
+            }
+            return ind1 >= ind2;
+        }
+        bool operator<= (const CircleIterator& other) const
+        {
+            Value_T* k = *data_[firstEl_];
+            int ind1;
+            int ind2;
+            for (int i = firstEl_; i < endEl_; i++)
+            {
+                if (element_ == k)
+                {
+                    ind1 = i;
+                }
+                if (other.element_ == k)
+                {
+                    ind2 = i;
+                }
+            }
+            return ind1 <= ind2;
+        }
     };
     CircleBuffer() = default;
-    CircleBuffer(int s)
-    : capacity_(s + 1)
+    explicit CircleBuffer(int s)
+    : capacity_(s + 1),
+    firstEl_(0),
+    endEl_(0)
     {
         data_ = new Value_T(s + 1);
         dataEnd_ = data_ + capacity_;
-        firstEl_ = 0;
-        endEl_ = 0;
     }
     bool isFull()
     {
@@ -183,4 +299,5 @@ int main() {
     {
         std::cout << ex[i] << "\n";
     }
+    std::sort(ex.first(), ex.end());
 }
